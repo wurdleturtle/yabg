@@ -77,6 +77,18 @@ int main(void)
             targetBlock.y++;
         }
 
+        if (IsKeyPressed(KEY_K)) {
+            SaveWorld("savefile.dat");
+        }
+        if (IsKeyPressed(KEY_L)) {
+            LoadWorld("savefile.dat");
+        }
+
+        if (IsKeyPressed(KEY_TAB)) {
+            SetWindowSize(1920, 1080);
+            ToggleBorderlessWindowed();
+        }
+
         // Placing Blocks
 
         if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {

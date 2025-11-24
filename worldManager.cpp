@@ -3,6 +3,7 @@
 #include "raylib.h"
 #include <vector>
 #include <cmath> // Required for floor()
+#include <stdio.h>
 
 typedef enum {
     BLOCK_AIR = 0,
@@ -134,4 +135,48 @@ void InitWorld(int initialSize) {
             gameWorld.chunks.push_back(newChunk);
         }
     }
+}
+
+void SaveWorld(const char* filename) {
+    FILE* file = fopen(filename, "wb");
+    if (!file) {
+        TraceLog(LOG_ERROR, "Failed to open world file for saving.");
+        return;
+    }
+
+    int chunkCount = gameWorld.chunks.size();
+    fwrite(&chunkCount, sizeof(int), 1, file);
+
+    for (const auto& chunk : gameWorld.chunks) {
+        fwrite(&chunk.position, sizeof(Vector3),1, file);
+        fwrite(chunk.blocks, sizeof(BlockType) * CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_LENGTH, 1, file);
+    }
+
+    fclose(file);
+    TraceLog(LOG_INFO, "World saved successfully.");
+}
+
+void LoadWorld(const char* filename) {
+    FILE* file = fopen(filename, "rb");
+    if (!file) {
+        TraceLog(LOG_ERROR, "Failed to open world file for loading.");
+        return;
+    }
+
+    gameWorld.chunks.clear();
+
+    int chunkCount = 0;
+    fread(&chunkCount, sizeof(int), 1, file);
+
+    for (int i = 0; i < chunkCount; i++) {
+        Chunk newChunk;
+        newChunk.isLoaded = true;
+
+        fread(&newChunk.position, sizeof(Vector3), 1, file);
+        fread(newChunk.blocks, sizeof(BlockType) * CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_LENGTH, 1, file);
+        gameWorld.chunks.push_back(newChunk);
+    }
+
+    fclose(file);
+    TraceLog(LOG_INFO, "World loaded successfully.");
 }
