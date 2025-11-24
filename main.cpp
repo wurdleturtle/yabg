@@ -1,6 +1,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "BlockRenderer.cpp"
+#include "worldManager.cpp "
 
 int main(void)
 {
@@ -15,8 +16,11 @@ int main(void)
     float movespeed = basemovespeed;
 
     cubeObject oakObject = InitializeLogObject("textures/oak.png", "textures/oakend.png");
-    cubeObject boneObject = InitializeLogObject("textures/bone.png", "textues/boneend.png");
+    cubeObject boneObject = InitializeLogObject("textures/bone.png", "textures/boneend.png");
     cubeObject grateObject = InitializeLogObject("textures/grate.png", "textures/grate.png");
+    cubeObject bedrockObject = InitializeLogObject("textures/bedrock.png", "textures/bedrock.png");
+
+    InitWorld(2); // Init A world, 2x2 chunks
 
     // Define the camera to look into our 3d world
     Camera3D camera = { 0 };
@@ -27,10 +31,9 @@ int main(void)
     camera.projection = CAMERA_PERSPECTIVE;             // Camera projection type
     double dt = 0;
 
-    int cubeAmount = 1;
-    
-    Vector3 cubePosition = { 0.0f, 1.0f, 0.0f };
-    Vector3 cubeVelocity = { 0.0f, 0.0f, 0.0f };
+    Vector3 targetBlock = {0.0f, 0.0f, 0.0f};
+
+    int cubeAmount = 0;
 
     SetTargetFPS(60);                   // Set the game to run at 60 frames-per-second
 
@@ -42,69 +45,48 @@ int main(void)
         // Update
         dt = GetFrameTime();
 
-        Vector3 targetPosition = cubePosition;
-        if (cubeAmount > 0) {
-            int maxLayer = (cubeAmount - 1) / 25;
-            // Target the center of the top layer (5x5 grid, center is at index 2,2)
-            targetPosition = Vector3Add(cubePosition, {-2.0f, (float)maxLayer, 2.0f});
-        }
-
-        camera.target = targetPosition;
+        camera.target = targetBlock;
         if (IsKeyDown(KEY_SPACE)){
             UpdateCamera(&camera, CAMERA_ORBITAL);
             UpdateCamera(&camera, CAMERA_ORBITAL);
         } else{
-            camera.position = Vector3Subtract(Vector3Add(targetPosition, {10.0f, 10.0f, 10.0f}), cubeVelocity);
+            camera.position = Vector3Add(targetBlock, {10.0f, 10.0f, 10.0f});
         }
         movespeed = basemovespeed * dt;
 
         // Input
 
+        if (IsKeyPressed(KEY_D)) {
+            targetBlock.x++;
+        }
+        if (IsKeyPressed(KEY_A)) {
+            targetBlock.x--;
+        }
+        if (IsKeyPressed(KEY_W)) {
+            targetBlock.z--;
+        }
+        if (IsKeyPressed(KEY_S)) {
+            targetBlock.z++;
+        }
+
+        if (IsKeyPressed(KEY_Q)) {
+            targetBlock.y--;
+        }
+        if (IsKeyPressed(KEY_E)) {
+            targetBlock.y++;
+        }
+
+        // Placing Blocks
+
         if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
-            cubeAmount++;
+            // Example: Place a block at the camera's target position (rounded)
+            Vector3 placePos = {
+                roundf(camera.target.x),
+                roundf(camera.target.y),
+                roundf(camera.target.z)
+            };
+            SetBlockAt(placePos, BLOCK_OAK_LOG);
         }
-
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-            if (cubeAmount > 1) cubeAmount--;
-        }
-
-        if (IsKeyDown(KEY_LEFT_ALT)) {
-            cubeAmount++;
-        }
-
-        if (IsKeyDown(KEY_X)) {
-            cubeAmount--;
-        }
-
-        if (IsKeyDown(KEY_Q)) {
-            camera.position.y--;
-        }
-        if (IsKeyDown(KEY_E)) {
-            camera.position.y++;
-        }
-
-        if (IsKeyDown(KEY_W)) {
-            cubeVelocity.z -= movespeed;
-            cubeVelocity.x -= movespeed;
-        } if (IsKeyDown(KEY_S)) {
-            cubeVelocity.z += movespeed;
-            cubeVelocity.x += movespeed;
-        }
-        
-        if (IsKeyDown(KEY_A)) {
-            cubeVelocity.x -= movespeed;
-            cubeVelocity.z += movespeed;
-        } if (IsKeyDown(KEY_D)) {
-            cubeVelocity.x += movespeed;
-            cubeVelocity.z -= movespeed;
-        }
-
-        // cubeVelocity = Vector3Clamp(cubeVelocity, {-1.0f, -1.0f, -1.0f}, {1.0f, 1.0f, 1.0f});
-
-                    // Friction
-        cubeVelocity = Vector3Multiply(cubeVelocity, { 0.85f, 0.85f, 0.85f});
-
-        cubePosition = Vector3Add(cubePosition, cubeVelocity);
 
         // Draw
         BeginDrawing();
@@ -113,26 +95,58 @@ int main(void)
 
             BeginMode3D(camera);
 
-                //    for (int i = 0; i <cubeAmount; i++) {
-                //        renderCube(Vector3Add(cubePosition, {(float) -i, 0.0f, 0.0f}), oakObject);
-                //    }
+                for (const auto& chunk : gameWorld.chunks) {
+                    cubeAmount = 0;
+                    if (!chunk.isLoaded) continue;
 
-                    for (int i = 0; i < cubeAmount; i++) {
-                        int layer = i / 25;
-                        int remainder = i % 25;
-                        int row = remainder / 5;
-                        int col = remainder % 5;
-                        
-                        renderCube(Vector3Add(cubePosition, {(float) -row, (float) layer, (float) col}), oakObject);
-                    }
+                    // Code inside this runs for every block in the chunk
+                    for (int x = 0; x < CHUNK_WIDTH; x++){
+                        for (int y = 0; y < CHUNK_HEIGHT; y++) {
+                            for (int z = 0; z < CHUNK_LENGTH; z++) {
 
-                DrawGrid(10000, 1.0f);
+                                // START
+                                BlockType type = chunk.blocks[x][y][z];
+                                
+                                if (type != BLOCK_AIR) {
+
+                                    cubeAmount++;
+                                    Vector3 blockPos = {
+                                        chunk.position.x + x,
+                                        chunk.position.y + y,
+                                        chunk.position.z + z
+                                    };
+
+                                    switch (type) {
+                                        case BLOCK_OAK_LOG:
+                                            renderCube(blockPos, oakObject);
+                                            break;
+                                        case BLOCK_BONE:
+                                            renderCube(blockPos, boneObject);
+                                            break;
+                                        case BLOCK_GRATE:
+                                            renderCube(blockPos, grateObject);
+                                            break;
+                                        case BLOCK_BEDROCK:
+                                            renderCube(blockPos, bedrockObject);
+                                            break;
+                                        default:
+                                            break;
+                                    }
+                                }
+                                // END
+                                
+                            }
+                        }
+                }
+                }
+
+                                // Draw Selection Wires
+                rlSetLineWidth(4.0f);
+                DrawCubeWires(targetBlock, 1.0f, 1.0f, 1.0f, DARKBLUE);
 
             EndMode3D();
 
-            DrawText(TextFormat("Oak Amount: %0.0f", (float) cubeAmount), 10, 100, 20, DARKBLUE);
-            DrawText(TextFormat("VX: %0.4f, VZ, %0.4f", cubeVelocity.x, cubeVelocity.z), 10, 70, 20, DARKGRAY);
-            DrawText(TextFormat("X: %0.4f, Z: %0.4f", cubePosition.x, cubePosition.z), 10, 40, 20, DARKGRAY);
+            DrawText(TextFormat("Non-Air Block Count: %0.0f", (float) cubeAmount), 10, 40, 20, DARKBLUE);
             DrawFPS(10, 10);
 
         EndDrawing();
