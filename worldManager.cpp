@@ -1,3 +1,5 @@
+#pragma once
+
 #include "raylib.h"
 #include <vector>
 #include <cmath> // Required for floor()
@@ -7,12 +9,18 @@ typedef enum {
     BLOCK_OAK_LOG,
     BLOCK_BONE,
     BLOCK_GRATE,
-    BLOCK_BEDROCK
+    BLOCK_STONE,
+    BLOCK_BEDROCK,
+    BLOCK_DIRT,
+    BLOCK_GRASS,
+    BLOCK_OAK_LEAVES,
+    BLOCK_COUNT
 } BlockType;
+
 
 // Define constants for array sizes (must be compile-time constants)
 #define CHUNK_WIDTH 16
-#define CHUNK_HEIGHT 16
+#define CHUNK_HEIGHT 36
 #define CHUNK_LENGTH 16
 
 struct Chunk {
@@ -85,16 +93,41 @@ void SetBlockAt(Vector3 pos, BlockType type) {
     }
 }
 
+#include "PerlinNoise.hpp"
+
 void InitWorld(int initialSize) {
+    PerlinNoise perlin;
     for (int x = 0; x < initialSize; x++) {
         for (int z = 0; z < initialSize; z++) {
             Chunk newChunk;
             InitChunk(&newChunk, Vector3{ (float)x * CHUNK_WIDTH, 0, (float)z * CHUNK_LENGTH });
             
-            // Example: Fill the bottom layer of the chunk with GRATE blocks
             for(int i = 0; i < CHUNK_WIDTH; i++) {
                 for(int k = 0; k < CHUNK_LENGTH; k++) {
-                    newChunk.blocks[i][0][k] = BLOCK_BEDROCK;
+                    float worldX = (x * CHUNK_WIDTH) + i;
+                    float worldZ = (z * CHUNK_LENGTH) + k;
+                    
+                    // Generate height using Perlin noise
+                    // Scale coordinates to make the terrain smoother
+                    float n = perlin.noise(worldX * 0.1f, 0.0f, worldZ * 0.1f);
+                    
+                    // Map noise (-1 to 1) to height (1 to CHUNK_HEIGHT)
+                    int height = (int)((n + 1.0f) * 0.5f * ((CHUNK_HEIGHT / 2) - 4)) + 2;
+                    
+                    if (height > CHUNK_HEIGHT) height = CHUNK_HEIGHT;
+                    if (height < 1) height = 1;
+
+                    for(int j = 0; j < height; j++) {
+                        if (j == 0) {
+                            newChunk.blocks[i][j][k] = BLOCK_BEDROCK;
+                        } else if (j == height - 1) {
+                            newChunk.blocks[i][j][k] = BLOCK_GRASS;
+                        } else if (j == height - 2) {
+                            newChunk.blocks[i][j][k] = BLOCK_DIRT;
+                        } else {
+                            newChunk.blocks[i][j][k] = BLOCK_STONE;
+                        }
+                    }
                 }
             }
 

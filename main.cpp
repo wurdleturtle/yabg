@@ -1,7 +1,9 @@
 #include "raylib.h"
 #include "raymath.h"
+#include <string>
 #include "BlockRenderer.cpp"
-#include "worldManager.cpp "
+#include "worldManager.cpp"
+#include "BlockRegistry.cpp"
 
 int main(void)
 {
@@ -15,12 +17,9 @@ int main(void)
     float basemovespeed = 2.0f;
     float movespeed = basemovespeed;
 
-    cubeObject oakObject = InitializeLogObject("textures/oak.png", "textures/oakend.png");
-    cubeObject boneObject = InitializeLogObject("textures/bone.png", "textures/boneend.png");
-    cubeObject grateObject = InitializeLogObject("textures/grate.png", "textures/grate.png");
-    cubeObject bedrockObject = InitializeLogObject("textures/bedrock.png", "textures/bedrock.png");
+    InitializeBlocks();
 
-    InitWorld(2); // Init A world, 2x2 chunks
+    InitWorld(3); // Init A world, 3x3 chunks
 
     // Define the camera to look into our 3d world
     Camera3D camera = { 0 };
@@ -30,6 +29,8 @@ int main(void)
     camera.fovy = 30.0f;                                // Camera field-of-view Y
     camera.projection = CAMERA_PERSPECTIVE;             // Camera projection type
     double dt = 0;
+
+    BlockType selectedBlock = BLOCK_OAK_LOG;
 
     Vector3 targetBlock = {0.0f, 0.0f, 0.0f};
 
@@ -85,7 +86,15 @@ int main(void)
                 roundf(camera.target.y),
                 roundf(camera.target.z)
             };
-            SetBlockAt(placePos, BLOCK_OAK_LOG);
+            SetBlockAt(placePos, selectedBlock);
+        }
+
+        if (IsKeyPressed(KEY_UP)) {
+             if (selectedBlock < BLOCK_COUNT - 1) {
+                selectedBlock = static_cast<BlockType>(static_cast<int>(selectedBlock) + 1);
+             } else {
+                selectedBlock = BLOCK_AIR;
+             }
         }
 
         // Draw
@@ -95,8 +104,9 @@ int main(void)
 
             BeginMode3D(camera);
 
+            cubeAmount = 0;
+
                 for (const auto& chunk : gameWorld.chunks) {
-                    cubeAmount = 0;
                     if (!chunk.isLoaded) continue;
 
                     // Code inside this runs for every block in the chunk
@@ -115,22 +125,37 @@ int main(void)
                                         chunk.position.y + y,
                                         chunk.position.z + z
                                     };
+                                    bool showFront, showBack, showRight, showLeft, showTop, showBottom;
+                                    showFront = GetBlockAt(Vector3{blockPos.x, blockPos.y, blockPos.z + 1}) == BLOCK_AIR;
+                                    showBack  = GetBlockAt(Vector3{blockPos.x, blockPos.y, blockPos.z - 1}) == BLOCK_AIR;
+                                    showRight = GetBlockAt(Vector3{blockPos.x + 1, blockPos.y, blockPos.z}) == BLOCK_AIR;
+                                    showLeft  = GetBlockAt(Vector3{blockPos.x - 1, blockPos.y, blockPos.z}) == BLOCK_AIR;
+                                    showTop   = GetBlockAt(Vector3{blockPos.x, blockPos.y + 1, blockPos.z}) == BLOCK_AIR;
+                                    showBottom= GetBlockAt(Vector3{blockPos.x, blockPos.y - 1, blockPos.z}) == BLOCK_AIR;
 
-                                    switch (type) {
-                                        case BLOCK_OAK_LOG:
-                                            renderCube(blockPos, oakObject);
-                                            break;
-                                        case BLOCK_BONE:
-                                            renderCube(blockPos, boneObject);
-                                            break;
-                                        case BLOCK_GRATE:
-                                            renderCube(blockPos, grateObject);
-                                            break;
-                                        case BLOCK_BEDROCK:
-                                            renderCube(blockPos, bedrockObject);
-                                            break;
-                                        default:
-                                            break;
+                                    if (type == BLOCK_OAK_LEAVES) {
+                                        // Special case: Leaves are transparent, so always show all faces
+                                        showFront = true;
+                                        showBack = true;
+                                        showRight = true;
+                                        showLeft = true;
+                                        showTop = true;
+                                        showBottom = true;
+                                    }
+
+                                    if (showFront || showBack || showRight || showLeft || showTop || showBottom) {
+                                        BlockDef* def = GetBlockDef(type);
+                                        if (def) {
+                                            cubeObject tempModel = def->model;
+                                            tempModel.Front.isVisible = showFront;
+                                            tempModel.Back.isVisible = showBack;
+                                            tempModel.Right.isVisible = showRight;
+                                            tempModel.Left.isVisible = showLeft;
+                                            tempModel.Top.isVisible = showTop;
+                                            tempModel.Bottom.isVisible = showBottom;
+
+                                            renderCube(blockPos, tempModel);
+                                        }
                                     }
                                 }
                                 // END
@@ -145,7 +170,20 @@ int main(void)
                 DrawCubeWires(targetBlock, 1.0f, 1.0f, 1.0f, DARKBLUE);
 
             EndMode3D();
+            
+            std::string blockName;
+            if (selectedBlock == BLOCK_AIR) {
+                blockName = "BLOCK_AIR";
+            } else {
+                BlockDef* def = GetBlockDef(selectedBlock);
+                if (def) {
+                    blockName = def->name;
+                } else {
+                    blockName = "UNKNOWN";
+                }
+            }
 
+            DrawText(TextFormat("Current Selected BlockType: %s", blockName.c_str()), 10, 20, 20, DARKBLUE);
             DrawText(TextFormat("Non-Air Block Count: %0.0f", (float) cubeAmount), 10, 40, 20, DARKBLUE);
             DrawFPS(10, 10);
 
