@@ -30,6 +30,8 @@ int main(void)
     camera.projection = CAMERA_PERSPECTIVE;             // Camera projection type
     double dt = 0;
 
+    bool invOpen = false;
+
     BlockType selectedBlock = BLOCK_OAK_LOG;
 
     Vector3 targetBlock = {0.0f, 0.0f, 0.0f};
@@ -87,6 +89,10 @@ int main(void)
         if (IsKeyPressed(KEY_TAB)) {
             SetWindowSize(1920, 1080);
             ToggleBorderlessWindowed();
+        }
+
+        if (IsKeyPressed(KEY_F)) {
+            invOpen = true;
         }
 
         // Placing Blocks
@@ -195,10 +201,76 @@ int main(void)
                 }
             }
 
+            // DRAW INV
+
+            if (invOpen) {
+                // Draw semi-transparent background
+                DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.5f));
+
+                // Inventory Panel dimensions
+                int panelWidth = 800;
+                int panelHeight = 500;
+                int panelX = (screenWidth - panelWidth) / 2;
+                int panelY = (screenHeight - panelHeight) / 2;
+
+                // Draw Panel
+                DrawRectangle(panelX, panelY, panelWidth, panelHeight, RAYWHITE);
+                DrawRectangleLines(panelX, panelY, panelWidth, panelHeight, DARKGRAY);
+                
+                // Header
+                DrawText("Inventory", panelX + 20, panelY + 20, 40, DARKGRAY);
+                DrawText("Press 'I' to close", panelX + panelWidth - 200, panelY + 30, 20, GRAY);
+
+                // Grid settings
+                int columns = 8;
+                int slotSize = 64;
+                int padding = 20;
+                int startX = panelX + 50;
+                int startY = panelY + 80;
+
+                for (int i = 0; i < BLOCK_COUNT; i++) {
+                    int col = i % columns;
+                    int row = i / columns;
+                    
+                    int x = startX + col * (slotSize + padding);
+                    int y = startY + row * (slotSize + padding);
+
+                    // Interaction
+                    Rectangle slotRect = { (float)x, (float)y, (float)slotSize, (float)slotSize };
+                    Vector2 mousePoint = GetMousePosition();
+                    bool isHovered = CheckCollisionPointRec(mousePoint, slotRect);
+
+                    if (isHovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                        selectedBlock = static_cast<BlockType>(i);
+                    }
+
+                    // Draw Slot Background/Highlight
+                    if (i == selectedBlock) {
+                        DrawRectangleRec(Rectangle{(float)x - 4, (float)y - 4, (float)slotSize + 8, (float)slotSize + 8}, GOLD);
+                        DrawRectangleLinesEx(Rectangle{(float)x - 4, (float)y - 4, (float)slotSize + 8, (float)slotSize + 8}, 2, ORANGE);
+                    } else if (isHovered) {
+                        DrawRectangleRec(Rectangle{(float)x - 2, (float)y - 2, (float)slotSize + 4, (float)slotSize + 4}, LIGHTGRAY);
+                    } else {
+                        DrawRectangleRec(slotRect, Fade(LIGHTGRAY, 0.3f));
+                    }
+
+                    // Draw Block Texture
+                    DrawTextureEx(GetBlockTexture(static_cast<BlockType>(i)), {(float)x, (float)y}, 0, 4.0f, WHITE);
+                    
+                    if (i == BLOCK_AIR) {
+                        DrawText("X", x + 24, y + 16, 32, RED);
+                    }
+                }
+
+                if (IsKeyPressed(KEY_I)) {
+                    invOpen = false;
+                }
+            }
+
             DrawText(TextFormat("Current Selected BlockType: %s", blockName.c_str()), 10, 20, 20, DARKBLUE);
             DrawText(TextFormat("Non-Air Block Count: %0.0f", (float) cubeAmount), 10, 40, 20, DARKBLUE);
             DrawFPS(10, 10);
-
+            
         EndDrawing();
     }
 

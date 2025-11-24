@@ -4,6 +4,7 @@
 #include "rlgl.h"
 #include "worldManager.cpp"
 #include "wurdleapi.cpp"
+#include <map>
 
 extern BlockType GetBlockAt(Vector3 worldPos);
 
@@ -22,10 +23,27 @@ typedef struct cubeObject {
     bool Transparent;
 } cubeObject; 
 
-cubeObject InitializeLogObject(const char* sideTexture, const char* endTexture, bool transparent) {
+struct TextureType {
+    Texture side;
+    Texture top;
+};
+
+std::map<BlockType, TextureType> TEXTURE_REGISTRY;
+
+Texture GetBlockTexture(BlockType type) {
+    return TEXTURE_REGISTRY[type].side;
+};
+
+void RegisterTexture(BlockType type, Texture texture, Texture toptexture) {
+    TEXTURE_REGISTRY[type] = { texture, toptexture };
+}
+
+cubeObject InitializeLogObject(const char* sideTexture, const char* endTexture, bool transparent, BlockType type) {
     // Load Textures
     Texture minecraftTexture = LoadTexture(sideTexture);
     Texture minecraftTextureTop = LoadTexture(endTexture);
+
+    RegisterTexture(type, minecraftTexture, minecraftTextureTop);
 
     // Create Models from Meshes
     Model cubeFront = LoadModelFromMesh(GenCubeMeshFront(1.0f, 1.0f, 1.0f));

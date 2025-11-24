@@ -12,7 +12,7 @@ struct BlockDef {
 std::map<BlockType, BlockDef> BLOCK_REGISTRY;
 
 void RegisterBlock(BlockType type, std::string name, const char* sideTex, const char* topTex, bool transparent = false) {
-    BLOCK_REGISTRY[type] = { name, InitializeLogObject(sideTex, topTex, transparent) };
+    BLOCK_REGISTRY[type] = { name, InitializeLogObject(sideTex, topTex, transparent, type) };
 }
 
 void InitializeBlocks() {

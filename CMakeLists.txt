@@ -17,3 +17,9 @@ add_executable(MyRaylibProject main.cpp)
 
 # Link Raylib to the executable
 target_link_libraries(MyRaylibProject PRIVATE raylib)
+
+# Copy textures to the build directory
+add_custom_command(TARGET MyRaylibProject POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/textures
+        $<TARGET_FILE_DIR:MyRaylibProject>/textures)
