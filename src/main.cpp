@@ -1,98 +1,42 @@
+#include "block.h"
+#include "camera_controller.h"
+#include "input.h"
 #include "raylib.h"
-#include "raymath.h"
-#include <vector>
-
-struct Blockpos {
-    int x;
-    int y; 
-    int z;
-    Color c;
-
-    Vector3 toVector3() const {
-        return {(float)x, (float)y, (float)z};
-    }
-};
-
-
+#include "render.h"
+#include "world.h"
 
 int main() {
-    InitWindow(800, 600, "Raylib + CMake");
 
-    Camera3D camera = {};
-    camera.fovy = 90;
-    camera.position = {10, 10, 10};
-    camera.projection = CAMERA_PERSPECTIVE;
-    camera.target = {0, 0, 0};
-    camera.up = {0, 1, 0};
+  // Init Settings:
 
-    std::vector<Blockpos> Blocks;
+  InitWindow(800, 600, "Raylib + CMake");
 
-    int count = 0;
+  Block defaultBlock = {0, 0, 0};
 
-    Blocks.push_back({0, 0, 0});
-    
-    Blockpos selectionPos = {0, 0, 0, WHITE};
+  Camera3D camera = CreateDefaultEditorCamera();
 
-    SetTargetFPS(60);
+  World world;
 
-    while (!WindowShouldClose()) {
+  world.AddBlock(defaultBlock);
 
-        camera.position = Vector3Add(selectionPos.toVector3(), {5, 5, 5});
-        camera.target = selectionPos.toVector3();
+  Block selectionPos = {0, 0, 0};
 
-        if (IsKeyPressed(KEY_SPACE)) {
-            Blocks.push_back(selectionPos);
-        }
+  SetTargetFPS(60);
 
-        if (IsKeyPressed(KEY_ONE)) selectionPos.c = WHITE;
-        if (IsKeyPressed(KEY_TWO)) selectionPos.c = RED;
-        if (IsKeyPressed(KEY_THREE)) selectionPos.c = ORANGE;
-        if (IsKeyPressed(KEY_FOUR)) selectionPos.c = YELLOW;
-        if (IsKeyPressed(KEY_FIVE)) selectionPos.c = GREEN;
-        if (IsKeyPressed(KEY_SIX)) selectionPos.c = BLUE;
+  while (!WindowShouldClose()) {
 
-        if (IsKeyPressed(KEY_A)) {
-            selectionPos.x--;
-        }
+    UpdateEditorCamera(camera, selectionPos);
+    HandleEditorInput(selectionPos, world);
 
-        if (IsKeyPressed(KEY_D)) {
-            selectionPos.x++;
-        }
+    BeginDrawing();
+    ClearBackground(BLACK);
+    BeginMode3D(camera);
+    DrawWorld(world);
+    DrawSelection(selectionPos);
+    EndMode3D();
+    DrawHud(selectionPos, world.GetBlockCount());
+    EndDrawing();
+  }
 
-        if (IsKeyPressed(KEY_W)) {
-            selectionPos.z--;
-        }
-
-        if (IsKeyPressed(KEY_S)) {
-            selectionPos.z++;
-        }
-
-        if (IsKeyPressed(KEY_Q)) {
-            selectionPos.y--;
-        }
-
-        if (IsKeyPressed(KEY_E)) {
-            selectionPos.y++;
-        }
-
-        BeginDrawing();
-        ClearBackground(BLACK);
-        BeginMode3D(camera);
-        for (const Blockpos& block : Blocks) {
-            DrawCubeV(block.toVector3(), {1, 1, 1}, block.c);
-            DrawCubeWiresV({block.toVector3()}, {1, 1, 1}, BLACK);
-            count++;
-        }
-
-        DrawCubeWiresV({selectionPos.toVector3()}, {1.01, 1.01, 1.01}, WHITE);
-
-        EndMode3D();
-        DrawFPS(10, 10);
-        DrawCircle(25, 25, 5, selectionPos.c);
-        DrawText(TextFormat("Vector Length: %0.0f", (float)count), 10, 30, 10, RED);
-        count = 0;
-        EndDrawing();
-    }
-
-    CloseWindow();
+  CloseWindow();
 }
