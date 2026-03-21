@@ -1,8 +1,14 @@
 #pragma once
 
-#include "block.h"
 #include "raylib.h"
 
-void UpdateEditorCamera(Camera3D &camera, const Block &selectionPos);
+struct PlayerCameraState {
+  float yaw = -90.0f;
+  float pitch = 0.0f;
+  float moveSpeed = 8.0f;
+  float mouseSensitivity = 0.10f;
+};
 
-Camera3D CreateDefaultEditorCamera();
+void UpdatePlayerCamera(Camera3D &camera, PlayerCameraState &state, float dt);
+
+Camera3D CreateDefaultPlayerCamera();

@@ -16,6 +16,15 @@ struct Block {
   }
 };
 
+struct Faces {
+  bool Front = true;
+  bool Back = true;
+  bool Left = true;
+  bool Right = true;
+  bool Top = true;
+  bool Bottom = true;
+};
+
 struct BlockHash {
 
   // TODO: learn what the FUCK this means
@@ -35,4 +44,12 @@ enum class BlockType : unsigned short { Dirt = 0 };
 
 struct BlockData {
   BlockType type = BlockType::Dirt;
+  Faces blockFaces;
+};
+
+struct RaycastHit {
+  bool hit = false;
+  Block blockPos = {0, 0, 0};
+  Vector3 normal = {0, 0, 0};
+  float distance = 0.0f;
 };

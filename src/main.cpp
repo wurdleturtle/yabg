@@ -2,8 +2,17 @@
 #include "camera_controller.h"
 #include "input.h"
 #include "raylib.h"
+#include "raymath.h"
 #include "render.h"
 #include "world.h"
+
+Block toBlock(Vector3 v) {
+  return {
+      static_cast<int>(floorf(v.x)),
+      static_cast<int>(floorf(v.y)),
+      static_cast<int>(floorf(v.z)),
+  };
+};
 
 int main() {
 
@@ -11,32 +20,60 @@ int main() {
 
   InitWindow(800, 600, "Raylib + CMake");
 
-  Block defaultBlock = {0, 0, 0};
+  int halfSize = 16;
+  int y = 0;
+  BlockType type = BlockType::Dirt;
 
-  Camera3D camera = CreateDefaultEditorCamera();
+  Camera3D camera = CreateDefaultPlayerCamera();
+  PlayerCameraState cameraState{};
 
   World world;
 
-  world.AddBlock(defaultBlock);
+  world.GenerateFlat(halfSize, y, type);
 
-  Block selectionPos = {0, 0, 0};
+  float dt;
 
-  SetTargetFPS(60);
+  Ray ray;
+  RaycastHit rayHit;
+
+  // SetTargetFPS(60);
+  DisableCursor();
 
   while (!WindowShouldClose()) {
 
-    UpdateEditorCamera(camera, selectionPos);
-    HandleEditorInput(selectionPos, world);
+    dt = GetFrameTime();
+    dt = std::max(dt, 0.001f);
+
+    UpdatePlayerCamera(camera, cameraState, dt);
+
+    ray = GetScreenToWorldRay(
+        {GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f}, camera);
+    TraceLog(LOG_INFO, "dir: %f %f %f", ray.direction.x, ray.direction.y,
+             ray.direction.z);
+    rayHit = world.Raycast(ray, 10.0f);
+    rayHit = world.Raycast(ray, 10.0f);
+
+    if (rayHit.hit && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+      world.RemoveBlock(rayHit.blockPos);
+    if (rayHit.hit && IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
+      world.AddBlock(
+          toBlock(Vector3Add(rayHit.blockPos.toVector3(), rayHit.normal)),
+          BlockType::Dirt);
+
+    if (IsKeyPressed(KEY_G))
+      world.UpdateFaces();
 
     BeginDrawing();
     ClearBackground(BLACK);
     BeginMode3D(camera);
     DrawWorld(world);
-    DrawSelection(selectionPos);
+    if (rayHit.hit)
+      DrawSelection(rayHit.blockPos);
     EndMode3D();
-    DrawHud(selectionPos, world.GetBlockCount());
+    DrawHud(world.GetBlockCount());
     EndDrawing();
   }
 
+  EnableCursor();
   CloseWindow();
 }
