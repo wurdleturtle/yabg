@@ -4,26 +4,26 @@
 #include "world.h"
 
 void HandleEditorInput(Block &selectionPos, World &world) {
-  if (IsKeyPressed(KEY_SPACE)) {
+  if (IsKeyPressed(KEY_ENTER)) {
     world.AddBlock(selectionPos);
   }
   if (IsKeyPressed(KEY_BACKSPACE)) {
     world.RemoveBlock(selectionPos);
   }
 
-  if (IsKeyPressed(KEY_A)) {
+  if (IsKeyPressed(KEY_LEFT)) {
     selectionPos.x--;
   }
 
-  if (IsKeyPressed(KEY_D)) {
+  if (IsKeyPressed(KEY_RIGHT)) {
     selectionPos.x++;
   }
 
-  if (IsKeyPressed(KEY_W)) {
+  if (IsKeyPressed(KEY_UP)) {
     selectionPos.z--;
   }
 
-  if (IsKeyPressed(KEY_S)) {
+  if (IsKeyPressed(KEY_DOWN)) {
     selectionPos.z++;
   }
 

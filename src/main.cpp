@@ -6,7 +6,8 @@
 #include "render.h"
 #include "world.h"
 
-Block toBlock(Vector3 v) {
+Block toBlock(Vector3 v)
+{
   return {
       static_cast<int>(floorf(v.x)),
       static_cast<int>(floorf(v.y)),
@@ -14,7 +15,8 @@ Block toBlock(Vector3 v) {
   };
 };
 
-int main() {
+int main()
+{
 
   // Init Settings:
 
@@ -23,13 +25,21 @@ int main() {
   int halfSize = 16;
   int y = 0;
   BlockType type = BlockType::Dirt;
+  Block selectionpos = {0, 0, 0};
 
   Camera3D camera = CreateDefaultPlayerCamera();
   PlayerCameraState cameraState{};
 
+  Texture tex = LoadTextureFromImage(LoadImage("./assets/bedrock.png"));
+
   World world;
 
   world.GenerateFlat(halfSize, y, type);
+  world.GenerateFlat(halfSize, y + 1, type);
+  world.GenerateFlat(halfSize, y + 2, type);
+  world.GenerateFlat(halfSize, y + 3, type);
+  world.GenerateFlat(halfSize, y + 4, type);
+  world.GenerateFlat(halfSize, y + 5, type);
 
   float dt;
 
@@ -39,19 +49,13 @@ int main() {
   // SetTargetFPS(60);
   DisableCursor();
 
-  while (!WindowShouldClose()) {
-
+  while (!WindowShouldClose())
+  {
     dt = GetFrameTime();
     dt = std::max(dt, 0.001f);
 
     UpdatePlayerCamera(camera, cameraState, dt);
-
-    ray = GetScreenToWorldRay(
-        {GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f}, camera);
-    TraceLog(LOG_INFO, "dir: %f %f %f", ray.direction.x, ray.direction.y,
-             ray.direction.z);
-    rayHit = world.Raycast(ray, 10.0f);
-    rayHit = world.Raycast(ray, 10.0f);
+    HandleEditorInput(selectionpos, world);
 
     if (rayHit.hit && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
       world.RemoveBlock(rayHit.blockPos);
@@ -66,9 +70,8 @@ int main() {
     BeginDrawing();
     ClearBackground(BLACK);
     BeginMode3D(camera);
-    DrawWorld(world);
-    if (rayHit.hit)
-      DrawSelection(rayHit.blockPos);
+    DrawWorld(world, tex);
+    DrawSelection(selectionpos);
     EndMode3D();
     DrawHud(world.GetBlockCount());
     EndDrawing();

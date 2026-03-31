@@ -22,7 +22,6 @@ void UpdatePlayerCamera(Camera3D &camera, PlayerCameraState &state, float dt) {
 
   state.pitch = Clamp(state.pitch, -89.0f, 89.0f);
 
-  // yaw/pitch to an actual target direction
   const float yawRad = state.yaw * DEG2RAD;
   const float pitchRad = state.pitch * DEG2RAD;
 
