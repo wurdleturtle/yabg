@@ -46,7 +46,7 @@ int main()
   Ray ray;
   RaycastHit rayHit;
 
-  // SetTargetFPS(60);
+  SetTargetFPS(60);
   DisableCursor();
 
   while (!WindowShouldClose())
