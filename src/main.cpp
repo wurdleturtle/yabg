@@ -6,7 +6,8 @@
 #include "render.h"
 #include "world.h"
 
-Block toBlock(Vector3 v) {
+Block toBlock(Vector3 v)
+{
   return {
       static_cast<int>(floorf(v.x)),
       static_cast<int>(floorf(v.y)),
@@ -14,7 +15,8 @@ Block toBlock(Vector3 v) {
   };
 };
 
-int main() {
+int main()
+{
 
   // Init Settings:
 
@@ -22,51 +24,45 @@ int main() {
 
   int halfSize = 16;
   int y = 0;
-  BlockType type = BlockType::Dirt;
   Block selectionpos = {0, 0, 0};
+  BlockType selectedType = BlockType::Dirt;
 
   Camera3D camera = CreateDefaultPlayerCamera();
   PlayerCameraState cameraState{};
 
-  Texture tex = LoadTextureFromImage(LoadImage("./assets/bedrock.png"));
+  const BlockTextureSet blockTextures = LoadBlockTextures();
 
   World world;
 
-  world.GenerateFlat(halfSize, y, type);
+  world.GenerateFlat(halfSize, y, BlockType::Bedrock);
 
   float dt;
-
-  Ray ray;
-  RaycastHit rayHit;
 
   SetTargetFPS(60);
   DisableCursor();
 
-  while (!WindowShouldClose()) {
+  while (!WindowShouldClose())
+  {
     dt = GetFrameTime();
     dt = std::max(dt, 0.001f);
 
     UpdatePlayerCamera(camera, cameraState, dt);
-    HandleEditorInput(selectionpos, world);
-
-    if (rayHit.hit && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-      world.RemoveBlock(rayHit.blockPos);
-    if (rayHit.hit && IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
-      world.AddBlock(
-          toBlock(Vector3Add(rayHit.blockPos.toVector3(), rayHit.normal)),
-          BlockType::Dirt);
-
+    HandleEditorInput(selectionpos, world, selectedType);
     if (IsKeyPressed(KEY_G))
       world.UpdateFaces();
-
     BeginDrawing();
     ClearBackground(BLACK);
     BeginMode3D(camera);
-    DrawWorld(world, tex);
+    DrawWorld(world, blockTextures);
     DrawSelection(selectionpos);
     EndMode3D();
-    DrawHud(world.GetBlockCount());
+    DrawHud(world.GetBlockCount(), selectedType, blockTextures);
     EndDrawing();
+  }
+
+  for (auto &tex : blockTextures)
+  {
+    UnloadTexture(tex);
   }
 
   EnableCursor();

@@ -2,12 +2,12 @@
 #include "raylib.h"
 #include "rlgl.h"
 
-void DrawWorld(const World &world, const Texture &tex)
+void DrawWorld(const World &world, const BlockTextureSet &textures)
 {
-  world.ForEachBlock([&tex](const Block &pos, const BlockData &data)
+  world.ForEachBlock([&textures](const Block &pos, const BlockData &data)
                      {
-    DrawCubeFaces(data.blockFaces, pos.toVector3(), tex);
-    DrawCubeWiresV(pos.toVector3(), {1.0f, 1.0f, 1.0f}, BLACK); });
+      const Texture &tex = textures.at(ToIndex(data.type));
+      DrawCubeFaces(data.blockFaces, pos.toVector3(), tex); });
 }
 
 void DrawSelection(const Block &selectionPos)
@@ -15,15 +15,17 @@ void DrawSelection(const Block &selectionPos)
   DrawCubeWiresV(selectionPos.toVector3(), {1.01f, 1.01f, 1.01f}, RED);
 }
 
-void DrawHud(std::size_t blockCount)
+void DrawHud(std::size_t blockCount, BlockType selectiontype, const BlockTextureSet &textures)
 {
   DrawFPS(10, 10);
 
   DrawText(TextFormat("Blocks: %i", static_cast<int>(blockCount)), 10, 40, 20,
            RED);
+
+  DrawTexture(textures.at(ToIndex(selectiontype)), 10, 70, WHITE);
 }
 
-void DrawCubeFaces(const Faces &faces, const Vector3 pos, const Texture &tex)
+void DrawCubeFaces(const Faces &faces, const Vector3 pos, const Texture &texture)
 {
   const float h = 1 * 0.5f;
 
@@ -35,7 +37,7 @@ void DrawCubeFaces(const Faces &faces, const Vector3 pos, const Texture &tex)
   const float z1 = pos.z + h;
 
   rlColor4ub(LIGHTGRAY.r, LIGHTGRAY.g, LIGHTGRAY.b, LIGHTGRAY.a);
-  rlSetTexture(tex.id);
+  rlSetTexture(texture.id);
   rlBegin(RL_QUADS);
 
   // Front (+Z)
@@ -118,3 +120,13 @@ void DrawCubeFaces(const Faces &faces, const Vector3 pos, const Texture &tex)
 
   rlEnd();
 };
+
+BlockTextureSet LoadBlockTextures()
+{
+  BlockTextureSet textures{};
+  for (std::size_t i = 0; i < BlockTypeCount; ++i)
+  {
+    textures[i] = LoadTexture(BlockDefinitions[i].texturePath);
+  }
+  return textures;
+}

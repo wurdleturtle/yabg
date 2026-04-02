@@ -1,9 +1,11 @@
 #pragma once
 #include "cstddef"
 #include "raylib.h"
+#include "block_registry.h"
 #include <functional>
 
-struct Block {
+struct Block
+{
   int x;
   int y;
   int z;
@@ -11,12 +13,14 @@ struct Block {
   Vector3 toVector3() const { return {(float)x, (float)y, (float)z}; }
 
   // checks only for position
-  bool operator==(const Block &other) const {
+  bool operator==(const Block &other) const
+  {
     return x == other.x && y == other.y && z == other.z;
   }
 };
 
-struct Faces {
+struct Faces
+{
   bool Front = true;
   bool Back = true;
   bool Left = true;
@@ -25,11 +29,13 @@ struct Faces {
   bool Bottom = true;
 };
 
-struct BlockHash {
+struct BlockHash
+{
 
   // TODO: learn what the FUCK this means
 
-  std::size_t operator()(const Block &b) const noexcept {
+  std::size_t operator()(const Block &b) const noexcept
+  {
     std::size_t hx = std::hash<int>{}(b.x);
     std::size_t hy = std::hash<int>{}(b.y);
     std::size_t hz = std::hash<int>{}(b.z);
@@ -40,18 +46,14 @@ struct BlockHash {
   }
 };
 
-enum class BlockType : unsigned short { Dirt = 0 };
-
-struct BlockDef {
-  const char *name;
-};
-
-struct BlockData {
+struct BlockData
+{
   BlockType type = BlockType::Dirt;
   Faces blockFaces;
 };
 
-struct RaycastHit {
+struct RaycastHit
+{
   bool hit = false;
   Block blockPos = {0, 0, 0};
   Vector3 normal = {0, 0, 0};
