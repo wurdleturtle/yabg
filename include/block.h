@@ -42,6 +42,10 @@ struct BlockHash {
 
 enum class BlockType : unsigned short { Dirt = 0 };
 
+struct BlockDef {
+  const char *name;
+};
+
 struct BlockData {
   BlockType type = BlockType::Dirt;
   Faces blockFaces;

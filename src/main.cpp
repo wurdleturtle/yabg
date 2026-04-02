@@ -6,8 +6,7 @@
 #include "render.h"
 #include "world.h"
 
-Block toBlock(Vector3 v)
-{
+Block toBlock(Vector3 v) {
   return {
       static_cast<int>(floorf(v.x)),
       static_cast<int>(floorf(v.y)),
@@ -15,8 +14,7 @@ Block toBlock(Vector3 v)
   };
 };
 
-int main()
-{
+int main() {
 
   // Init Settings:
 
@@ -35,11 +33,6 @@ int main()
   World world;
 
   world.GenerateFlat(halfSize, y, type);
-  world.GenerateFlat(halfSize, y + 1, type);
-  world.GenerateFlat(halfSize, y + 2, type);
-  world.GenerateFlat(halfSize, y + 3, type);
-  world.GenerateFlat(halfSize, y + 4, type);
-  world.GenerateFlat(halfSize, y + 5, type);
 
   float dt;
 
@@ -49,8 +42,7 @@ int main()
   SetTargetFPS(60);
   DisableCursor();
 
-  while (!WindowShouldClose())
-  {
+  while (!WindowShouldClose()) {
     dt = GetFrameTime();
     dt = std::max(dt, 0.001f);
 

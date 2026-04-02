@@ -1,7 +1,5 @@
 #include "world.h"
 #include "block.h"
-#include <cmath>
-#include <limits>
 #include <unordered_map>
 
 bool World::AddBlock(const Block &pos, BlockType type) {
